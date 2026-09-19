@@ -4,14 +4,14 @@ Simulador de la computadora Simpletron escrito en C.
 
 ## Compilación y Ejecución
 Para compilar el código fuente desde la terminal:
-\`\`\`bash
+```bash
 gcc simpletron.c -o simpletron
-\`\`\`
+```
 
 Para correr el programa:
-\`\`\`bash
+```bash
 ./simpletron
-\`\`\`
+```
 
 ## Pruebas SML
 Copia y pega estas instrucciones cuando el simulador pida datos.
