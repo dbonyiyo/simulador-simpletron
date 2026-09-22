@@ -78,6 +78,10 @@ int main() {
                 printf("%+05d\n", memory[operand]);
                 instructionCounter++;
                 break;
+            case 12:
+                printf("\n");
+                instructionCounter++;
+                break;
             case 20:
                 accumulator = memory[operand];
                 instructionCounter++;
@@ -106,6 +110,16 @@ int main() {
                 break;
             case 33:
                 accumulator *= memory[operand];
+                instructionCounter++;
+                break;
+            case 34:
+                if (memory[operand] == 0) {
+                    printf("*** Intento de dividir entre cero ***\n");
+                    printf("*** La ejecucion de Simpletron termino anormalmente ***\n");
+                    memoryDump(accumulator, instructionCounter, instructionRegister, operationCode, operand, memory);
+                    return 1;
+                }
+                accumulator %= memory[operand];
                 instructionCounter++;
                 break;
             case 40:
