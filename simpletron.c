@@ -114,7 +114,7 @@ int main() {
                 break;
             case 34:
                 if (memory[operand] == 0) {
-                    printf("*** Intento de dividir entre cero ***\n");
+                    printf("*** Intento de residuo con divisor cero ***\n");
                     printf("*** La ejecucion de Simpletron termino anormalmente ***\n");
                     memoryDump(accumulator, instructionCounter, instructionRegister, operationCode, operand, memory);
                     return 1;
