@@ -38,7 +38,64 @@ char stackTop(Pila *p) {
     return '\0';
 }
 
+int prioridad(char op) {
+    switch (op) {
+        case '^': return 3;
+        case '*':
+        case '/': return 2;
+        case '+':
+        case '-': return 1;
+        default:  return 0;
+    }
+}
+
+void convertirPostfijo(char *infijo, char *postfijo) {
+    Pila p;
+    init(&p);
+    int j = 0;
+
+    for (int i = 0; infijo[i] != '\0'; i++) {
+        char symb = infijo[i];
+
+        if (isspace(symb)) {
+            continue;
+        }
+
+        if (isalnum(symb)) {
+            postfijo[j++] = symb;
+        } else if (symb == '(') {
+            push(&p, symb);
+        } else if (symb == ')') {
+            while (!isEmpty(&p) && stackTop(&p) != '(') {
+                postfijo[j++] = pop(&p);
+            }
+            if (!isEmpty(&p)) {
+                pop(&p);
+            }
+        } else {
+            while (!isEmpty(&p) && prioridad(stackTop(&p)) >= prioridad(symb)) {
+                postfijo[j++] = pop(&p);
+            }
+            push(&p, symb);
+        }
+    }
+
+    while (!isEmpty(&p)) {
+        postfijo[j++] = pop(&p);
+    }
+    postfijo[j] = '\0';
+}
+
 int main() {
-    printf("Estructura de pila inicializada.\n");
+    char infijo[MAX];
+    char postfijo[MAX];
+
+    printf("Expresion: ");
+    if (fgets(infijo, sizeof(infijo), stdin) != NULL) {
+        infijo[strcspn(infijo, "\n")] = '\0';
+        convertirPostfijo(infijo, postfijo);
+        printf("Postfijo: %s\n", postfijo);
+    }
+
     return 0;
 }
