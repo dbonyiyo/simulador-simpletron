@@ -24,34 +24,41 @@ void memoryDump(int acc, int ic, int ir, int op, int opnd, int mem[]) {
     }
 }
 
-void cargarPrograma(int memory[]) {
-    printf("*** Bienvenido a Simpletron! ***\n");
-    printf("*** Introduzca su programa una instruccion ***\n");
-    printf("*** (o palabra de datos) a la vez en la linea ***\n");
-    printf("*** de texto de entrada. Yo indicare el numero ***\n");
-    printf("*** de posicion y una interrogacion (?). Usted ***\n");
-    printf("*** tecleara entonces la palabra para esa ***\n");
-    printf("*** posicion. Haga clic en el boton LISTO para ***\n");
-    printf("*** dejar de introducir su programa. ***\n\n");
-
+void cargarPrograma(int memory[], FILE *archivo) {
     int inst = 0;
     int i = 0;
     
-    while (i < 100) {
-        printf("%02d ? ", i);
-        scanf("%d", &inst);
-        
-        if (inst == 9999) {
-            break;
+    if (archivo == NULL) {
+        printf("*** Bienvenido a Simpletron! ***\n");
+        printf("*** Introduzca su programa una instruccion ***\n");
+        printf("*** a la vez. Ingrese 9999 para terminar. ***\n\n");
+
+        while (i < 100) {
+            printf("%02d ? ", i);
+            scanf("%d", &inst);
+            
+            if (inst == 9999) {
+                break;
+            }
+            if (inst < -9999 || inst > 9998) {
+                printf("*** Palabra invalida. Debe estar entre -9999 y +9998 ***\n");
+                continue;
+            }
+            memory[i] = inst;
+            i++;
         }
-        
-        if (inst < -9999 || inst > 9998) {
-            printf("*** Palabra invalida. Debe estar entre -9999 y +9998 ***\n");
-            continue;
+    } else {
+        printf("*** Cargando programa desde archivo... ***\n");
+        while (i < 100 && fscanf(archivo, "%d", &inst) == 1) {
+            if (inst == 9999) {
+                break;
+            }
+            if (inst >= -9999 && inst <= 9998) {
+                memory[i] = inst;
+                i++;
+            }
         }
-        
-        memory[i] = inst;
-        i++;
+        fclose(archivo);
     }
 
     printf("*** Se termino de cargar el programa ***\n");
@@ -100,22 +107,18 @@ void ejecutarPrograma(int memory[]) {
                 break;
             case 30:
                 accumulator += memory[operand];
-                if (checkOverflow(accumulator, instructionCounter, instructionRegister, operationCode, operand, memory)) {
-                    return;
-                }
+                if (checkOverflow(accumulator, instructionCounter, instructionRegister, operationCode, operand, memory)) return;
                 instructionCounter++;
                 break;
             case 31:
                 accumulator -= memory[operand];
-                if (checkOverflow(accumulator, instructionCounter, instructionRegister, operationCode, operand, memory)) {
-                    return;
-                }
+                if (checkOverflow(accumulator, instructionCounter, instructionRegister, operationCode, operand, memory)) return;
                 instructionCounter++;
                 break;
             case 32:
                 if (memory[operand] == 0) {
                     printf("*** Intento de dividir entre cero ***\n");
-                    printf("*** La ejecucion de Simpletron termino anormalmente ***\n");
+                    printf("*** La ejecucion termino anormalmente ***\n");
                     memoryDump(accumulator, instructionCounter, instructionRegister, operationCode, operand, memory);
                     return;
                 }
@@ -124,9 +127,7 @@ void ejecutarPrograma(int memory[]) {
                 break;
             case 33:
                 accumulator *= memory[operand];
-                if (checkOverflow(accumulator, instructionCounter, instructionRegister, operationCode, operand, memory)) {
-                    return;
-                }
+                if (checkOverflow(accumulator, instructionCounter, instructionRegister, operationCode, operand, memory)) return;
                 instructionCounter++;
                 break;
             case 40:
@@ -152,7 +153,6 @@ void ejecutarPrograma(int memory[]) {
                 return;
             default:
                 printf("*** Codigo de operacion invalido: %02d ***\n", operationCode);
-                printf("*** La ejecucion de Simpletron termino anormalmente ***\n");
                 memoryDump(accumulator, instructionCounter, instructionRegister, operationCode, operand, memory);
                 return;
         }
@@ -161,7 +161,11 @@ void ejecutarPrograma(int memory[]) {
 
 int main() {
     int memory[100] = {0};
-    cargarPrograma(memory);
+    
+    FILE *archivo = fopen("programa.sml", "r");
+    
+    cargarPrograma(memory, archivo);
     ejecutarPrograma(memory);
+    
     return 0;
 }
