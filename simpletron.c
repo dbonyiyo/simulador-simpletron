@@ -24,14 +24,7 @@ void memoryDump(int acc, int ic, int ir, int op, int opnd, int mem[]) {
     }
 }
 
-int main() {
-    int memory[100] = {0};
-    int accumulator = 0;
-    int instructionCounter = 0;
-    int instructionRegister = 0;
-    int operationCode = 0;
-    int operand = 0;
-
+void cargarPrograma(int memory[]) {
     printf("*** Bienvenido a Simpletron! ***\n");
     printf("*** Introduzca su programa una instruccion ***\n");
     printf("*** (o palabra de datos) a la vez en la linea ***\n");
@@ -44,7 +37,7 @@ int main() {
     int inst = 0;
     int i = 0;
     
-    while (1) {
+    while (i < 100) {
         printf("%02d ? ", i);
         scanf("%d", &inst);
         
@@ -53,6 +46,7 @@ int main() {
         }
         
         if (inst < -9999 || inst > 9998) {
+            printf("*** Palabra invalida. Debe estar entre -9999 y +9998 ***\n");
             continue;
         }
         
@@ -62,6 +56,24 @@ int main() {
 
     printf("*** Se termino de cargar el programa ***\n");
     printf("*** Comienza la ejecucion del programa ***\n\n");
+}
+
+int checkOverflow(int acc, int ic, int ir, int op, int opnd, int memory[]) {
+    if (acc < -9999 || acc > 9999) {
+        printf("*** Desbordamiento del acumulador ***\n");
+        printf("*** La ejecucion de Simpletron termino anormalmente ***\n");
+        memoryDump(acc, ic, ir, op, opnd, memory);
+        return 1;
+    }
+    return 0;
+}
+
+void ejecutarPrograma(int memory[]) {
+    int accumulator = 0;
+    int instructionCounter = 0;
+    int instructionRegister = 0;
+    int operationCode = 0;
+    int operand = 0;
 
     while (instructionCounter < 100) {
         instructionRegister = memory[instructionCounter];
@@ -88,10 +100,16 @@ int main() {
                 break;
             case 30:
                 accumulator += memory[operand];
+                if (checkOverflow(accumulator, instructionCounter, instructionRegister, operationCode, operand, memory)) {
+                    return;
+                }
                 instructionCounter++;
                 break;
             case 31:
                 accumulator -= memory[operand];
+                if (checkOverflow(accumulator, instructionCounter, instructionRegister, operationCode, operand, memory)) {
+                    return;
+                }
                 instructionCounter++;
                 break;
             case 32:
@@ -99,13 +117,16 @@ int main() {
                     printf("*** Intento de dividir entre cero ***\n");
                     printf("*** La ejecucion de Simpletron termino anormalmente ***\n");
                     memoryDump(accumulator, instructionCounter, instructionRegister, operationCode, operand, memory);
-                    return 1;
+                    return;
                 }
                 accumulator /= memory[operand];
                 instructionCounter++;
                 break;
             case 33:
                 accumulator *= memory[operand];
+                if (checkOverflow(accumulator, instructionCounter, instructionRegister, operationCode, operand, memory)) {
+                    return;
+                }
                 instructionCounter++;
                 break;
             case 40:
@@ -128,10 +149,19 @@ int main() {
             case 43:
                 printf("*** Termino la ejecucion de Simpletron ***\n");
                 memoryDump(accumulator, instructionCounter, instructionRegister, operationCode, operand, memory);
-                return 0;
+                return;
             default:
-                return 1;
+                printf("*** Codigo de operacion invalido: %02d ***\n", operationCode);
+                printf("*** La ejecucion de Simpletron termino anormalmente ***\n");
+                memoryDump(accumulator, instructionCounter, instructionRegister, operationCode, operand, memory);
+                return;
         }
     }
+}
+
+int main() {
+    int memory[100] = {0};
+    cargarPrograma(memory);
+    ejecutarPrograma(memory);
     return 0;
 }
