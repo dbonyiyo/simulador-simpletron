@@ -1,0 +1,5 @@
+10 input x
+20 if y == x goto 60
+30 let y = y + 1
+60 print y
+99 end
