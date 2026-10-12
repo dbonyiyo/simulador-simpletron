@@ -13,12 +13,21 @@ typedef struct {
 
 TableEntry symbolTable[MEM_SIZE];
 int symbolCount = 0;
-
 int smlMemory[MEM_SIZE];
 int flags[MEM_SIZE];
-
 int instructionCounter = 0;
 int dataCounter = MEM_SIZE - 1;
+
+typedef struct {
+    int items[MEM_SIZE];
+    int top;
+} Pila;
+
+void initPila(Pila *p) { p->top = -1; }
+int isEmpty(Pila *p) { return p->top == -1; }
+void push(Pila *p, int elem) { if (p->top < MEM_SIZE - 1) p->items[++(p->top)] = elem; }
+int pop(Pila *p) { return isEmpty(p) ? -1 : p->items[(p->top)--]; }
+int stackTop(Pila *p) { return isEmpty(p) ? -1 : p->items[p->top]; }
 
 void inicializarCompilador() {
     for (int i = 0; i < MEM_SIZE; i++) {
@@ -56,11 +65,110 @@ int obtenerUbicacionDato(int symbol, char type) {
     return loc;
 }
 
+int prioridad(char op) {
+    if (op == '*' || op == '/') return 2;
+    if (op == '+' || op == '-') return 1;
+    return 0;
+}
+
+void procesarLet(char *expr) {
+    char targetVar;
+    sscanf(expr, "%c", &targetVar);
+    int targetLoc = obtenerUbicacionDato(targetVar, 'V');
+    
+    char *rightSide = strstr(expr, "= ") + 2;
+    
+    char postfijo[256] = "";
+    Pila p;
+    initPila(&p);
+    
+    char *token = strtok(rightSide, " ");
+    while (token != NULL) {
+        if (isalnum(token[0])) {
+            strcat(postfijo, token);
+            strcat(postfijo, " ");
+        } else {
+            while (!isEmpty(&p) && prioridad(stackTop(&p)) >= prioridad(token[0])) {
+                char opStr[3] = {(char)pop(&p), ' ', '\0'};
+                strcat(postfijo, opStr);
+            }
+            push(&p, token[0]);
+        }
+        token = strtok(NULL, " ");
+    }
+    while (!isEmpty(&p)) {
+        char opStr[3] = {(char)pop(&p), ' ', '\0'};
+        strcat(postfijo, opStr);
+    }
+    
+    initPila(&p);
+    token = strtok(postfijo, " ");
+    while (token != NULL) {
+        int loc;
+        if (isdigit(token[0])) {
+            loc = obtenerUbicacionDato(atoi(token), 'C');
+            push(&p, loc);
+        } else if (isalpha(token[0])) {
+            loc = obtenerUbicacionDato(token[0], 'V');
+            push(&p, loc);
+        } else {
+            int rightLoc = pop(&p);
+            int leftLoc = pop(&p);
+            
+            smlMemory[instructionCounter++] = 2000 + leftLoc;
+            
+            if (token[0] == '+') smlMemory[instructionCounter++] = 3000 + rightLoc;
+            else if (token[0] == '-') smlMemory[instructionCounter++] = 3100 + rightLoc;
+            else if (token[0] == '*') smlMemory[instructionCounter++] = 3300 + rightLoc;
+            else if (token[0] == '/') smlMemory[instructionCounter++] = 3200 + rightLoc;
+            
+            int tempLoc = dataCounter--;
+            smlMemory[instructionCounter++] = 2100 + tempLoc;
+            push(&p, tempLoc);
+        }
+        token = strtok(NULL, " ");
+    }
+    
+    int finalLoc = pop(&p);
+    smlMemory[instructionCounter++] = 2000 + finalLoc;
+    smlMemory[instructionCounter++] = 2100 + targetLoc;
+}
+
+void procesarIf(char *expr) {
+    char *leftOp = strtok(expr, " ");
+    char *op = strtok(NULL, " ");
+    char *rightOp = strtok(NULL, " ");
+    strtok(NULL, " "); 
+    char *targetLineStr = strtok(NULL, " ");
+    
+    int leftLoc = isdigit(leftOp[0]) ? obtenerUbicacionDato(atoi(leftOp), 'C') : obtenerUbicacionDato(leftOp[0], 'V');
+    int rightLoc = isdigit(rightOp[0]) ? obtenerUbicacionDato(atoi(rightOp), 'C') : obtenerUbicacionDato(rightOp[0], 'V');
+    int targetLine = atoi(targetLineStr);
+    
+    smlMemory[instructionCounter++] = 2000 + leftLoc;
+    smlMemory[instructionCounter++] = 3100 + rightLoc;
+    
+    int branchOp = 0;
+    if (strcmp(op, "==") == 0) branchOp = 4200;
+    else if (strcmp(op, "<") == 0) branchOp = 4100;
+    else if (strcmp(op, ">=") == 0) branchOp = 4100; 
+    
+    int loc = buscarSimbolo(targetLine, 'L');
+    if (loc != -1) {
+        smlMemory[instructionCounter++] = branchOp + loc;
+    } else {
+        smlMemory[instructionCounter] = branchOp;
+        flags[instructionCounter++] = targetLine;
+    }
+}
+
 void procesarLinea(char *linea) {
+    char lineaOriginal[256];
+    strcpy(lineaOriginal, linea);
+    
     char *token = strtok(linea, " ");
     if (token != NULL) {
         int numLinea = atoi(token);
-        
         if (buscarSimbolo(numLinea, 'L') == -1) {
             agregarSimbolo(numLinea, 'L', instructionCounter);
         }
@@ -71,28 +179,40 @@ void procesarLinea(char *linea) {
                 return;
             } else if (strcmp(token, "input") == 0) {
                 token = strtok(NULL, " ");
-                int loc = obtenerUbicacionDato(token[0], 'V');
-                smlMemory[instructionCounter] = 1000 + loc;
-                instructionCounter++;
+                smlMemory[instructionCounter++] = 1000 + obtenerUbicacionDato(token[0], 'V');
             } else if (strcmp(token, "print") == 0) {
                 token = strtok(NULL, " ");
-                int loc = obtenerUbicacionDato(token[0], 'V');
-                smlMemory[instructionCounter] = 1100 + loc;
-                instructionCounter++;
+                smlMemory[instructionCounter++] = 1100 + obtenerUbicacionDato(token[0], 'V');
             } else if (strcmp(token, "goto") == 0) {
                 token = strtok(NULL, " ");
                 int targetLine = atoi(token);
                 int loc = buscarSimbolo(targetLine, 'L');
                 if (loc != -1) {
-                    smlMemory[instructionCounter] = 4000 + loc;
+                    smlMemory[instructionCounter++] = 4000 + loc;
                 } else {
                     smlMemory[instructionCounter] = 4000;
-                    flags[instructionCounter] = targetLine;
+                    flags[instructionCounter++] = targetLine;
                 }
-                instructionCounter++;
             } else if (strcmp(token, "end") == 0) {
-                smlMemory[instructionCounter] = 4300;
-                instructionCounter++;
+                smlMemory[instructionCounter++] = 4300;
+            } else if (strcmp(token, "let") == 0) {
+                char *expr = strstr(lineaOriginal, "let ") + 4;
+                procesarLet(expr);
+            } else if (strcmp(token, "if") == 0) {
+                char *expr = strstr(lineaOriginal, "if ") + 3;
+                procesarIf(expr);
+            }
+        }
+    }
+}
+
+void segundaPasada() {
+    for (int i = 0; i < MEM_SIZE; i++) {
+        if (flags[i] != -1) {
+            int targetLine = flags[i];
+            int loc = buscarSimbolo(targetLine, 'L');
+            if (loc != -1) {
+                smlMemory[i] += loc;
             }
         }
     }
@@ -130,6 +250,7 @@ int main() {
     if (scanf("%99s", nombreArchivo) == 1) {
         inicializarCompilador();
         primeraPasada(nombreArchivo);
+        segundaPasada();
         imprimirSML();
     }
 
