@@ -236,10 +236,18 @@ void primeraPasada(const char *nombreArchivo) {
     fclose(archivo);
 }
 
-void imprimirSML() {
-    printf("\n--- Codigo SML Generado ---\n");
-    for (int i = 0; i < instructionCounter; i++) {
-        printf("%02d %+05d\n", i, smlMemory[i]);
+void guardarSML() {
+    FILE *salida = fopen("programa.sml", "w");
+    if (salida != NULL) {
+        printf("\n--- Codigo SML Generado ---\n");
+        for (int i = 0; i < instructionCounter; i++) {
+            printf("%02d %+05d\n", i, smlMemory[i]);
+            fprintf(salida, "%+05d\n", smlMemory[i]);
+        }
+        fclose(salida);
+        printf("--- Archivo 'programa.sml' creado con exito ---\n");
+    } else {
+        printf("*** Error al crear el archivo SML ***\n");
     }
 }
 
@@ -251,7 +259,7 @@ int main() {
         inicializarCompilador();
         primeraPasada(nombreArchivo);
         segundaPasada();
-        imprimirSML();
+        guardarSML();
     }
 
     return 0;
