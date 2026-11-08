@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h> 
 
 void memoryDump(int acc, int ic, int ir, int op, int opnd, int mem[]) {
     printf("\nRegistros:\n");
@@ -45,8 +46,8 @@ void cargarPrograma(int memory[]) {
             break;
         }
         
-        if (inst < -9999 || inst > 9998) {
-            printf("*** Palabra invalida. Debe estar entre -9999 y +9998 ***\n");
+        if (inst < -9999 || inst > 9999) { 
+            printf("*** Palabra invalida. Debe estar entre -9999 y +9999 ***\n");
             continue;
         }
         
@@ -74,6 +75,7 @@ void ejecutarPrograma(int memory[]) {
     int instructionRegister = 0;
     int operationCode = 0;
     int operand = 0;
+    int potenciaTemporal = 0; 
 
     while (instructionCounter < 100) {
         instructionRegister = memory[instructionCounter];
@@ -150,6 +152,28 @@ void ejecutarPrograma(int memory[]) {
                 printf("*** Termino la ejecucion de Simpletron ***\n");
                 memoryDump(accumulator, instructionCounter, instructionRegister, operationCode, operand, memory);
                 return;
+            
+            case 50: 
+                if (memory[operand] == 0) {
+                    printf("*** Intento de modulo entre cero ***\n");
+                    printf("*** La ejecucion de Simpletron termino anormalmente ***\n");
+                    memoryDump(accumulator, instructionCounter, instructionRegister, operationCode, operand, memory);
+                    return;
+                }
+                accumulator %= memory[operand];
+                instructionCounter++;
+                break;
+                
+            case 51: 
+                potenciaTemporal = (int)pow((double)accumulator, (double)memory[operand]);
+                accumulator = potenciaTemporal;
+                if (checkOverflow(accumulator, instructionCounter, instructionRegister, operationCode, operand, memory)) {
+                    return;
+                }
+                instructionCounter++;
+                break;
+            
+
             default:
                 printf("*** Codigo de operacion invalido: %02d ***\n", operationCode);
                 printf("*** La ejecucion de Simpletron termino anormalmente ***\n");
