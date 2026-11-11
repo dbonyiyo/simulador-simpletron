@@ -1,33 +1,19 @@
-# Simpletron
+# Proyecto Simpletron y Compilador SML
+**Materia:** Programación Avanzada
 
-Simulador de la computadora Simpletron escrito en C.
+Este repositorio contiene la implementación completa de un simulador de la máquina virtual Simpletron y un compilador que traduce lenguaje de alto nivel a código de máquina SML (Simpletron Machine Language).
 
-## Compilación y Ejecución
-Para compilar el código fuente desde la terminal:
+## Estructura del Repositorio
+* `src/`: Contiene el código fuente en C.
+  * `simpletron.c`: Simulador de la máquina virtual con instrucciones matemáticas extendidas (Módulo y Exponenciación).
+  * `compilador.c`: Compilador completo con validación de sintaxis, traducción de comandos `let` e `if`, y resolución de saltos lógicos.
+* `programas/`: Contiene los archivos de prueba en lenguaje de máquina.
+  * `cuenta_regresiva.sml`: Programa SML cargable manualmente para validar la máquina virtual.
+* `docs/`: Documentación general del proyecto.
+
+## Instrucciones de Compilación y Ejecución
+Para compilar los programas desde la terminal, utilice el compilador GCC:
+
 ```bash
-gcc simpletron.c -o simpletron
-```
-
-Para correr el programa:
-```bash
-./simpletron
-```
-
-## Pruebas SML
-Copia y pega estas instrucciones cuando el simulador pida datos.
-
-### Prueba 1: Sumar dos números
-+1007
-+1008
-+2007
-+3008
-+2109
-+1109
-+4300
-9999
-
-### Prueba 2: Forzar error (División entre cero)
-+1005
-+2005
-+3206
-9999
+gcc src/simpletron.c -o simpletron
+gcc src/compilador.c -o compilador
